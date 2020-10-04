@@ -6,5 +6,6 @@
       "type": "vcs",
       "url": "https://github.com/albreis/framework-router"
     }
-  ]
+  ],
+  "minimum-stability": "dev"
 }
