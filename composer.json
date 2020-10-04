@@ -1,13 +1,13 @@
 {
   "name": "albreis/router",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "type": "library",
   "require": {
     "php": ">=7.2"
   },
   "autoload": {
     "psr-4": {
-      "Albreis\\": "src"
+      "Albreis\\Framework\\": "src"
     }
   }
 }

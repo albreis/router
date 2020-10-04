@@ -1,4 +1,4 @@
-<?php namespace Albreis;
+<?php namespace Albreis\Framework;
 
 /**
  * Class Router
