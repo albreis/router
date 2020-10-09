@@ -31,6 +31,7 @@ class Router
     {
         $self = isset($_SERVER['PHP_SELF']) ? str_replace('index.php/', '', $_SERVER['PHP_SELF']) : '';
         $uri = isset($_SERVER['REQUEST_URI']) ? explode('?', $_SERVER['REQUEST_URI'])[0] : '';
+        $uri = urldecode($uri);
 
         if ($self !== $uri) {
             $peaces = explode('/', $self);
