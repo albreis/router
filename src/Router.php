@@ -62,7 +62,7 @@ class Router
      * @param $callback
      * @return $this
      */
-    public function on($method, $path, $callback)
+    public function on($method, $path, $callback, $bypass = false)
     {
         $method = strtolower($method);
         if (!isset($this->routes[$method])) {
@@ -73,7 +73,7 @@ class Router
         $pattern = str_replace('/', '\/', $uri);
         $route = '/^' . $pattern . '$/';
 
-        $this->routes[$method][$route] = $callback;
+        $this->routes[$method][$route] = ['function' => $callback, 'bypass' => $bypass];
 
         return $this;
     }
@@ -108,7 +108,11 @@ class Router
 
             if (preg_match($route, $uri, $parameters)) {
                 array_shift($parameters);
-                return $this->call($callback, $parameters);
+                if($callback['bypass']) {
+                    $this->call($callback['function'], $parameters);
+                } else  {
+                    return $this->call($callback['function'], $parameters);
+                }
             }
         }
         return null;
