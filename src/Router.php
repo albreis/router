@@ -1,5 +1,7 @@
 <?php namespace Albreis\Framework;
 
+use ReflectionMethod;
+
 /**
  * Class Router
  * @package Albreis
@@ -128,7 +130,10 @@ class Router
     {
         if (is_callable($callback)) {
             if(count($call = explode('::', $callback)) == 2) {
-                $callback = [new $call[0], $call[1]];
+                $method = new ReflectionMethod($call[0], $call[1]);
+                if (!$method->isStatic()) {
+                    $callback = [new $call[0], $call[1]];
+                }
             }
             return call_user_func_array($callback, $parameters);
         }
