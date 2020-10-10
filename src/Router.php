@@ -127,6 +127,9 @@ class Router
     public function call($callback, $parameters)
     {
         if (is_callable($callback)) {
+            if(count($call = explode('::', $callback)) == 2) {
+                $callback = [new $call[0], $call[1]];
+            }
             return call_user_func_array($callback, $parameters);
         }
         return null;
