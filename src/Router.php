@@ -33,6 +33,7 @@ class Router
     {
         $self = isset($_SERVER['PHP_SELF']) ? str_replace('index.php/', '', $_SERVER['PHP_SELF']) : '';
         $uri = isset($_SERVER['REQUEST_URI']) ? explode('?', $_SERVER['REQUEST_URI'])[0] : '';
+        $uri = str_replace($_SERVER['SCRIPT_NAME'], '/', $uri);
         $uri = urldecode($uri);
 
         if ($self !== $uri) {
@@ -109,7 +110,7 @@ class Router
 
         foreach ($this->routes[$method] as $route => $callback) {
 
-            if (preg_match($route, $uri, $parameters)) {
+        if (preg_match($route, $uri, $parameters)) {
                 array_shift($parameters);
                 if($callback['bypass']) {
                     $this->call($callback['function'], $parameters);
@@ -129,7 +130,7 @@ class Router
     public function call($callback, $parameters)
     {
         if (is_callable($callback)) {
-            if(count($call = explode('::', $callback)) == 2) {
+            if(is_string($callback) && count($call = explode('::', $callback)) == 2) {
                 $method = new ReflectionMethod($call[0], $call[1]);
                 if (!$method->isStatic()) {
                     $callback = [new $call[0], $call[1]];
