@@ -82,6 +82,11 @@ class Router
         return $this;
     }
 
+    public function middleware($method, $path, $callback)
+    {
+        return $this->on($method, $path, $callback, true)->run($method, $path);
+    }
+
     /**
      * The __invoke method is called when a script tries to call an object as a function.
      *
@@ -123,19 +128,37 @@ class Router
     }
 
     /**
+     * @param $method
+     * @param $uri
+     * @return mixed|null
+     */
+    public function exec($method, $path, $callback, $bypass = false)
+    {
+        $method = strtolower($method);
+        $uri = substr($path, 0, 1) !== '/' ? '/' . $path : $path;
+        $pattern = str_replace('/', '\/', $uri);
+        $route = '/^' . $pattern . '$/';
+
+        if (preg_match($route, $this->uri(), $parameters)) {
+            array_shift($parameters);
+            $this->call($callback, $parameters);
+        }
+    }
+
+    /**
      * @param $callback
      * @param $parameters
      * @return mixed
      */
     public function call($callback, $parameters)
     {
-        if (is_callable($callback)) {
-            if(is_string($callback) && count($call = explode('::', $callback)) == 2) {
-                $method = new ReflectionMethod($call[0], $call[1]);
-                if (!$method->isStatic()) {
-                    $callback = [new $call[0], $call[1]];
-                }
+        if(is_string($callback) && count($call = explode('::', $callback)) == 2) {
+            $method = new ReflectionMethod($call[0], $call[1]);
+            if (!$method->isStatic()) {
+                $callback = [new $call[0], $call[1]];
             }
+        }
+        if (is_callable($callback)) {
             return call_user_func_array($callback, $parameters);
         }
         return null;
