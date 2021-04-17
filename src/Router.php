@@ -134,14 +134,23 @@ class Router
      */
     public function exec($method, $path, $callback, $bypass = false)
     {
+        if(is_array($method)) {
+            foreach($method as $m) {
+                $this->exec($m, $path, $callback, $bypass);
+            }
+            return;
+        }
         $method = strtolower($method);
         $uri = substr($path, 0, 1) !== '/' ? '/' . $path : $path;
         $pattern = str_replace('/', '\/', $uri);
         $route = '/^' . $pattern . '$/';
 
-        if (preg_match($route, $this->uri(), $parameters)) {
+        if (($method == $this->method() || $method == '*') && preg_match($route, $this->uri(), $parameters)) {
             array_shift($parameters);
             $this->call($callback, $parameters);
+            if(!$bypass) {
+                exit;
+            }
         }
     }
 
