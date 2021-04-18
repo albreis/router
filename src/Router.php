@@ -1,15 +1,11 @@
 <?php namespace Albreis\Framework;
 
 use ReflectionMethod;
+use Exception;  
 
 /**
  * Class Router
  * @package Albreis
- *
- * @method Router get($route, $callable)
- * @method Router post($route, $callable)
- * @method Router put($route, $callable)
- * @method Router delete($route, $callable)
  */
 class Router
 {
@@ -57,48 +53,8 @@ class Router
      */
     function __call($name, $arguments)
     {
-        return $this->on($name, isset($arguments[0]) ? $arguments[0] : '', isset($arguments[1]) ? $arguments[1] : '');
-    }
-
-    /**
-     * @param $method
-     * @param $path
-     * @param $callback
-     * @return $this
-     */
-    public function on($method, $path, $callback, $bypass = false)
-    {
-        $method = strtolower($method);
-        if (!isset($this->routes[$method])) {
-            $this->routes[$method] = [];
-        }
-
-        $uri = substr($path, 0, 1) !== '/' ? '/' . $path : $path;
-        $pattern = str_replace('/', '\/', $uri);
-        $route = '/^' . $pattern . '$/';
-
-        $this->routes[$method][$route] = ['function' => $callback, 'bypass' => $bypass];
-
-        return $this;
-    }
-
-    public function middleware($method, $path, $callback)
-    {
-        return $this->on($method, $path, $callback, true)->run($method, $path);
-    }
-
-    /**
-     * The __invoke method is called when a script tries to call an object as a function.
-     *
-     * @link http://php.net/manual/en/language.oop5.magic.php#language.oop5.magic.invoke
-     *
-     * @param $method
-     * @param $uri
-     * @return mixed
-     */
-    function __invoke($method, $uri)
-    {
-        return $this->run($method, $uri);
+        list($path, $callback, $bypass) = array_pad($arguments, 3, '');
+        return $this->exec($name, $path, $callback, $bypass);
     }
 
     /**
@@ -106,33 +62,7 @@ class Router
      * @param $uri
      * @return mixed|null
      */
-    public function run($method, $uri)
-    {
-        $method = strtolower($method);
-        if (!isset($this->routes[$method])) {
-            return null;
-        }
-
-        foreach ($this->routes[$method] as $route => $callback) {
-
-        if (preg_match($route, $uri, $parameters)) {
-                array_shift($parameters);
-                if($callback['bypass']) {
-                    $this->call($callback['function'], $parameters);
-                } else  {
-                    return $this->call($callback['function'], $parameters);
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @param $method
-     * @param $uri
-     * @return mixed|null
-     */
-    public function exec($method, $path, $callback, $bypass = false)
+    private function exec($method, $path, $callback, $bypass = false)
     {
         if(is_array($method)) {
             foreach($method as $m) {
@@ -144,8 +74,8 @@ class Router
         $uri = substr($path, 0, 1) !== '/' ? '/' . $path : $path;
         $pattern = str_replace('/', '\/', $uri);
         $route = '/^' . $pattern . '$/';
-
-        if (($method == $this->method() || $method == '*') && preg_match($route, $this->uri(), $parameters)) {
+        
+        if (($method == $this->method() || $method == '*' || $method == 'all') && preg_match($route, $this->uri(), $parameters)) {
             array_shift($parameters);
             $this->call($callback, $parameters);
             if(!$bypass) {
@@ -159,7 +89,7 @@ class Router
      * @param $parameters
      * @return mixed
      */
-    public function call($callback, $parameters)
+    private function call($callback, $parameters)
     {
         if(is_string($callback) && count($call = explode('::', $callback)) == 2) {
             $method = new ReflectionMethod($call[0], $call[1]);
