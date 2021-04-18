@@ -6,7 +6,7 @@ Antes de tudo precisamos importar nosso loader do composer:
 include 'vendor/autoload.php;
 ```
 
-Primeiro instanciamos o Router.
+Agora podemos instânciar o Router.
 
 ```php
 $router = new \Albreis\Router;
