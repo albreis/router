@@ -1,4 +1,4 @@
-<?php namespace Albreis\Framework;
+<?php namespace Albreis;
 
 use ReflectionMethod;
 use Exception;  
