@@ -13,7 +13,9 @@ O Router aceita qualquer método de requisição e possui 3 argumentos:
 $router->[metodo]([path], [callback], [bypass]);
 ```
 
-**path** é o caminho em que o callback deve ser executado
+**metodo** GET, POST, DELETE, CLI, etc
+
+**path** é o caminho em que o callback deve ser executado. Usa REGEX para definir as rotas.
 
 **callback** é um callable, seja uma função ou método e aceita os formatos:
 
@@ -28,7 +30,7 @@ $router->[metodo]([path], [callback], [bypass]);
 
 Exemplo 1:
 ```php
-$router->get('login', function(){
+$router->get('^login$', function(){
     /**
      * Aqui tu podes criar toda sua lógica seja retornar 
      * um JSON ou um HTML
@@ -38,7 +40,7 @@ $router->get('login', function(){
 
 Exemplo 2:
 ```php
-$router->get('([^/]+)/([^/]+)', function($category, $post){
+$router->get('^([^/]+)/([^/]+)$', function($category, $post){
     /**
      * Aqui tu podes criar toda sua lógica seja retornar 
      * um JSON ou um HTML
@@ -52,7 +54,7 @@ Caso queira que o script continue sendo executado mesmo após dar match com a ro
 
 Exemplo 3:
 ```php
-$router->get('([^/]+)/([^/]+)', function($category, $post){
+$router->get('^([^/]+)/([^/]+)$', function($category, $post){
 
     /**
      * Ao acessar a URL /frutas/melancia
@@ -79,7 +81,7 @@ Um exemplo de uso seria para criar um sistema de logs de requisição ou pré tr
 
 Exemplo 4:
 ```php
-$router->get('login', function(){
+$router->get('^login$', function(){
     /**
      * Executa as instruções e segue para a próxima rota
      */
@@ -92,7 +94,7 @@ $router->get('login', function(){
     $_GET['teste'] = 123;
 }, true);
 
-$router->get('login', function(){
+$router->get('^login$', function(){
     /**
      * Daqui em diante nada será executado
      */  
@@ -109,14 +111,14 @@ $router->get('login', function(){
 
 Exemplo 5 (funções anônimas):
 ```php
-$router->get('login', function(){
+$router->get('^login$', function(){
      
 });
 ```
 
 Exemplo 6 (arrow functions):
 ```php
-$router->get('([^/]+)/([^/]+)', fn($a, $b) => var_dump($a, $b));
+$router->get('^([^/]+)/([^/]+)$', fn($a, $b) => var_dump($a, $b));
 ```
 
 Exemplo 6 (métodos):
@@ -129,20 +131,20 @@ class Home {
 
 $home = new Home;
 
-$router->get('([^/]+)/([^/]+)', [$home, 'index']);
+$router->get('^([^/]+)/([^/]+)$', [$home, 'index']);
 
 // ou 
 
-$router->get('([^/]+)/([^/]+)', 'Home::index');
+$router->get('^([^/]+)/([^/]+)$', 'Home::index');
 
 // ou
 
-$router->get('([^/]+)/([^/]+)', function($a, $b) use ($home) {
+$router->get('^([^/]+)/([^/]+)$', function($a, $b) use ($home) {
     $home->index($a, $b);
 });
 
 // ou
 
-$router->get('([^/]+)/([^/]+)', fn($a, $b) => $home->index($a, $b));
+$router->get('^([^/]+)/([^/]+)$', fn($a, $b) => $home->index($a, $b));
 
 ```

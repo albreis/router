@@ -14,6 +14,13 @@ class Router
      */
     private $routes = [];
 
+    public $uri;
+
+    public function __construct($uri = null)
+    {
+        $this->uri = $uri;
+    }
+
     /**
      * @return string
      */
@@ -27,6 +34,23 @@ class Router
      */
     public function uri()
     {
+
+        if($this->uri) 
+        {
+            return $this->uri;
+        }
+
+        if($this->method() == 'cli') 
+        {
+            global $argv;
+
+            if(!isset($argv[1])) {
+                throw new Exception("URI is required", 1);
+                
+            }
+            return $argv[1];
+        }
+
         $self = isset($_SERVER['PHP_SELF']) ? str_replace('index.php/', '', $_SERVER['PHP_SELF']) : '';
         $uri = isset($_SERVER['REQUEST_URI']) ? explode('?', $_SERVER['REQUEST_URI'])[0] : '';
         $uri = str_replace($_SERVER['SCRIPT_NAME'], '/', $uri);
@@ -71,9 +95,9 @@ class Router
             return;
         }
         $method = strtolower($method);
-        $uri = substr($path, 0, 1) !== '/' ? '/' . $path : $path;
+        $uri = $path;
         $pattern = str_replace('/', '\/', $uri);
-        $route = '/^' . $pattern . '$/';
+        $route = '/' . $pattern . '/';
         
         if (($method == $this->method() || $method == '*' || $method == 'all') && preg_match($route, $this->uri(), $parameters)) {
             array_shift($parameters);
