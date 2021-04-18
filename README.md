@@ -1,9 +1,22 @@
 # Como usar
 
+Antes de tudo precisamos importar nosso loader do composer:
+
+```php
+include 'vendor/autoload.php;
+```
+
 Primeiro instanciamos o Router.
 
 ```php
+$router = new \Albreis\Router;
+
+// ou
+
+use Albreis\Router;
+
 $router = new Router;
+
 ```
 
 ## Fazendo uma requisição
