@@ -55,6 +55,7 @@ Exemplo 3:
 $router->get('([^/]+)/([^/]+)', function($category, $post){
 
     /**
+     * Ao acessar a URL /frutas/melancia
      * A saída do var_dump abaixo seria:
      * string(6) "frutas" string(8) "melancia"
      */
