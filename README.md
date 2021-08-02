@@ -120,6 +120,18 @@ $router->get('^login$', function(){
 });
 ```
 
+# Usando via CLI
+
+Você pode usar o Router via terminal para chamar as rotas usando o padrão abaixo:
+
+```
+php index.php METODO PATH ARGUMENTOS
+```
+
+Exemplo:
+```bash
+$ php index.php POST /login username=usuario01 password=1234
+```
 # Exemplos avançados
 
 Exemplo 5 (funções anônimas):
