@@ -61,9 +61,18 @@ class Router
                 $_SERVER['REQUEST_URI'] = array_shift($arguments);
             }
 
+            $url = parse_url($_SERVER['REQUEST_URI']);
+
             if(count($argv) > 3) {
-                parse_str(implode('&', $arguments), $_GET);
+                parse_str(implode('&', $arguments), $_POST);
             }
+
+            if(isset($url['query'])) {
+                parse_str($url['query'], $_GET);
+            }
+
+            $_REQUEST = $_GET + $_POST;
+
         }
 
         $self = isset($_SERVER['PHP_SELF']) ? str_replace('index.php/', '', $_SERVER['PHP_SELF']) : '';
