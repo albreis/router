@@ -1,0 +1,63 @@
+File: /home/public_html/vendor/albreis/router/src/Router.php
+Line: 44
+Test: return (new Albreis\Router)->method()
+Return: string(3) "cli"
+Expect: string(3) "cli"
+
+Status: Success
+
+File: /home/public_html/vendor/albreis/router/src/Router.php
+Line: 49
+Test: return (new Albreis\Router('GET'))->method()
+Return: string(3) "GET"
+Expect: string(3) "GET"
+
+Status: Success
+
+File: /home/public_html/vendor/albreis/router/src/Router.php
+Line: 54
+Test: return new Albreis\Router('FOO')
+Return: string(18) "Method not allowed"
+Expect: string(18) "Method not allowed"
+
+Status: Success
+
+File: /home/public_html/vendor/albreis/router/src/Router.php
+Line: 59
+Test: return new Router;
+Return: string(24) "Class "Router" not found"
+Expect: string(24) "Class "Router" not found"
+
+Status: Success
+
+File: /home/public_html/vendor/albreis/router/src/Router.php
+Line: 73
+Test: $router = new Albreis\Router; $router->setMethod('POST'); return $router->method;
+Return: string(4) "POST"
+Expect: string(4) "POST"
+
+Status: Success
+
+File: /home/public_html/vendor/albreis/router/src/Router.php
+Line: 76
+Test: $router = new Albreis\Router; $router->setMethod('BAR'); return $router->method;
+Return: string(18) "Method not allowed"
+Expect: string(18) "Method not allowed"
+
+Status: Success
+
+File: /home/public_html/vendor/albreis/router/src/Router.php
+Line: 94
+Test: return (new Albreis\Router)->uri()
+Return: string(3) "src"
+Expect: string(3) "src"
+
+Status: Success
+
+File: /home/public_html/vendor/albreis/router/src/Router.php
+Line: 97
+Test: return (new Albreis\Router(null, '/homepage'))->uri()
+Return: string(9) "/homepage"
+Expect: string(9) "/homepage"
+
+Status: Success

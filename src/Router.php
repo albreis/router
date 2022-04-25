@@ -6,6 +6,7 @@ use Exception;
 /**
  * Class Router
  * @package Albreis
+ * 
  */
 class Router
 {
@@ -14,24 +15,87 @@ class Router
      */
     private $routes = [];
 
+    public $allowed_methods = [
+        'GET',
+        'POST',
+        'PATCH',
+        'DELETE',
+        'PUT',
+        'OPTIONS',
+        'HEAD',
+    ];
+
+    public $method;
+
     public $uri;
 
-    public function __construct($uri = null)
+    public function __construct($method = null, $uri = null)
     {
+        $this->setMethod($method);
         $this->uri = $uri;
         $this->uri();
     }
 
     /**
      * @return string
+     * 
+     * Teste para retorna o método da requisição atual
+     * 
+     * @test return (new Albreis\Router)->method()
+     * @expect return "cli"
+     * 
+     * Teste simulando uma requisição GET
+     * 
+     * @test return (new Albreis\Router('GET'))->method()
+     * @expect return "GET"
+     * 
+     * Teste simulando um verbo não existente
+     * 
+     * @test return new Albreis\Router('FOO')
+     * @expect return "Method not allowed"
+     * 
+     * Teste de classe declarada de forma incorreta
+     * 
+     * @test return new Router;
+     * @expect return 'Class "Router" not found'
      */
     public function method()
     {
+
+        if($this->method) {
+            return $this->method;
+        }
+
         return isset($_SERVER['REQUEST_METHOD']) ? strtolower($_SERVER['REQUEST_METHOD']) : 'cli';
     }
 
     /**
+     * @test $router = new Albreis\Router; $router->setMethod('POST'); return $router->method;
+     * @expect return 'POST'
+     * 
+     * @test $router = new Albreis\Router; $router->setMethod('BAR'); return $router->method;
+     * @expect return 'Method not allowed'
+     */
+
+    public function setMethod($method) {
+        
+        if(!$method) return;
+
+        if(!in_array($method, $this->allowed_methods)) {
+            throw new Exception('Method not allowed');
+        }
+
+        $this->method = $method;
+    }
+
+    /**
      * @return string
+     * 
+     * @test return (new Albreis\Router)->uri()
+     * @expect return 'src'
+     * 
+     * @test return (new Albreis\Router(null, '/homepage'))->uri()
+     * @expect return '/homepage'
      */
     public function uri()
     {
@@ -98,6 +162,7 @@ class Router
      * @param $arguments array
      * @return mixed
      * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.methods
+     * 
      */
     function __call($name, $arguments)
     {
@@ -126,7 +191,7 @@ class Router
         
         if (($method == $this->method() || $method == '*' || $method == 'all') && preg_match($route, $this->uri(), $parameters)) {
             array_shift($parameters);
-            $this->call($callback, $parameters);
+            return $this->call($callback, $parameters);
             if(!$bypass) {
                 exit;
             }

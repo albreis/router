@@ -1,0 +1,308 @@
+<?php 
+error_reporting(E_ALL);
+ini_set('display_errors', E_ALL);
+$opts = array_merge(['exclude' => '', 'exclude-regex' => ''], getopt('', ['include::', 'exclude::', 'exclude-regex::']));
+$opts['include'] = isset($opts['include']);
+$currentWorkingDir = getcwd();
+$logs = [];
+$varname = time();
+$vendor = $currentWorkingDir . '/vendor/autoload.php';
+if(!empty($opts['exclude'])) {
+  if(is_array($opts['exclude'])) {
+    $opts['exclude'] = array_map(function($item) { return realpath($item); }, $opts['exclude']);
+  }
+  else {
+    $opts['exclude'] = realpath($opts['exclude']) ?? dirname($vendor);
+  }
+}
+$bootstrap = $currentWorkingDir . '/bootstrap/app.php';
+${"{$varname}_path"} = $opts['path'] ?? end($argv);
+${"{$varname}_vendor_path"} = $opts['vendor'] ?? $vendor;
+${"{$varname}_bootstrap_path"} = $opts['bootstrap'] ?? $bootstrap;
+if (file_exists(${"{$varname}_vendor_path"})) { require ${"{$varname}_vendor_path"}; }
+if (file_exists(${"{$varname}_bootstrap_path"})) { require ${"{$varname}_bootstrap_path"}; }
+${"{$varname}_path"} = ${"{$varname}_path"} ?? '.';
+${"{$varname}_rii"} = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($currentWorkingDir . '/' . ${"{$varname}_path"}));
+${"{$varname}_files"} = [];
+${"{$varname}_classes"} = [];
+${"{$varname}_tmp_dir"} = dirname(__FILE__) . '/tmp';
+if(!file_exists(${"{$varname}_tmp_dir"})) { mkdir(${"{$varname}_tmp_dir"}, 0755, true); }
+${"{$varname}_errors"} = 0;
+require __DIR__ . '/helpers.php';
+foreach(${"{$varname}_rii"} as ${"{$varname}_file"}) {
+  if(!empty($opts['exclude'])) {
+    if(is_array($opts['exclude'])) {
+      foreach($opts['exclude'] as $exc) {      
+        if(realpath(${"{$varname}_file"}->getPathname()) == $exc) {
+          continue;
+        }
+      }
+    }
+    else {
+      if(realpath(${"{$varname}_file"}->getPathname()) == $opts['exclude']) {
+        continue;
+      }
+    }
+  }
+  if(!empty($opts['exclude-regex'])) {
+    if(is_array($opts['exclude-regex'])) {
+      foreach($opts['exclude-regex'] as $exc) {      
+        if(preg_match("#{$exc}#i", realpath(${"{$varname}_file"}->getPathname()))) {
+          continue;
+        }
+      }
+    }
+    else {
+      if(preg_match("#{$opts['exclude-regex']}#i", realpath(${"{$varname}_file"}->getPathname()))) {
+        continue;
+      }
+    }
+  }
+  if(!${"{$varname}_file"}->isDir()) {
+    ob_start();
+    if(in_array($opts['include'], ['true', true, 1])) include ${"{$varname}_file"}->getPathname();
+    ob_end_clean();
+    ${"{$varname}_files"}[] = ${"{$varname}_file"}->getPathname();
+    ${"{$varname}_contents"} = file_get_contents(${"{$varname}_file"}->getPathname());
+    preg_match_all('/\@test[\s]+(.*)\n?/', ${"{$varname}_contents"}, ${"{$varname}__matches"});
+    defined('TESTED_CLASS_DIR') || define('TESTED_CLASS_DIR', realpath(dirname(${"{$varname}_file"}->getPathname())));
+    $basedir = TESTED_CLASS_DIR;
+    $file = file(${"{$varname}_file"});
+    if(isset(${"{$varname}__matches"}[1])) {
+      foreach(${"{$varname}__matches"}[1] as ${"{$varname}__test_key"} => ${"{$varname}_test"}) {
+        ${"{$varname}_tmp_name"} = md5(microtime());
+        ${"{$varname}_tmp"} = "{${"{$varname}_tmp_dir"}}/test-{${"{$varname}_tmp_name"}}.php";          
+        file_put_contents(${"{$varname}_tmp"}, "<?php {${"{$varname}_test"}};");
+        ob_start();
+        try {
+          ${"{$varname}_result"} = require ${"{$varname}_tmp"};
+        }
+        catch(Exception | ErrorException | Error | ArgumentCountError | ArithmeticError | AssertionError | DivisionByZeroError | CompileError | ParseError | TypeError $e) {
+          ${"{$varname}_result"} = $e->getMessage();
+        }
+        ob_end_clean();
+        $ln = 0;
+        foreach($file as $ln => $line) {
+          if(stripos($line, ${"{$varname}_test"}) !== false) break;
+        }
+        $ln++;
+        preg_match('/\@expect[\s]+(.*)\n?/', $file[$ln], ${"{$varname}__matches_expect"});
+        echo $logs[] = "File: ".realpath(${"{$varname}_file"})."\n";
+        echo $logs[] = "Line: {$ln}\n";
+        echo $logs[] = "Test: {${"{$varname}_test"}}\n";
+        ob_start();
+        var_dump(${"{$varname}_result"});
+        echo $logs[] = 'Return: ' . trim(ob_get_clean()) . "\n";
+        if(isset(${"{$varname}__matches_expect"}[0])) {
+          ${"{$varname}_tmp_expec_name"} = md5(microtime());
+          ${"{$varname}_tmp_expec"} = "{${"{$varname}_tmp_dir"}}/test-{${"{$varname}_tmp_expec_name"}}.php";  
+          file_put_contents(${"{$varname}_tmp_expec"}, "<?php {${"{$varname}__matches_expect"}[1]};");
+          ob_start();
+          try {
+            $expect = require ${"{$varname}_tmp_expec"};
+          }
+          catch(Exception | ErrorException | Error | ArgumentCountError | ArithmeticError | AssertionError | DivisionByZeroError | CompileError | ParseError | TypeError $e) {
+            $expect = $e->getMessage();
+          }
+          ob_end_clean();
+          ob_start();
+          var_dump($expect);
+          $expect_ret = ob_get_clean();
+          echo $logs[] = 'Expect: ' . $expect_ret . "\n";
+          echo $logs[] = "Status: " . (${"{$varname}_result"} === $expect ? 'Success' : 'Failed');
+          ${"{$varname}_result"} = (${"{$varname}_result"} === $expect);
+        }
+        else {
+          echo $logs[] = "Status: " . (${"{$varname}_result"} === true ? 'Success' : 'Failed');
+        }
+        echo $logs[] = "\n\n";
+        unlink(${"{$varname}_tmp"});
+        if(${"{$varname}_result"} !== true) {
+          ${"{$varname}_errors"}++;
+        }
+      }
+    }
+    preg_match_all('/\@test_using[\s]+(.*)\n?/', ${"{$varname}_contents"}, ${"{$varname}__matches"});
+    if(isset(${"{$varname}__matches"}[1])) {
+      foreach(${"{$varname}__matches"}[1] as ${"{$varname}__test_key"} => ${"{$varname}_test"}) {
+        ${"{$varname}_tmp_name"} = md5(microtime());
+        ${"{$varname}_tmp"} = "{${"{$varname}_tmp_dir"}}/test-{${"{$varname}_tmp_name"}}.php";          
+        file_put_contents(${"{$varname}_tmp"}, file_get_contents($basedir . '/' . ${"{$varname}_test"}));
+        ob_start();
+        try {
+          ${"{$varname}_result"} = require ${"{$varname}_tmp"};
+        }
+        catch(Exception | ErrorException | Error | ArgumentCountError | ArithmeticError | AssertionError | DivisionByZeroError | CompileError | ParseError | TypeError $e) {
+          ${"{$varname}_result"} = $e->getMessage();
+        }
+        ob_end_clean();
+        $ln = 0;
+        foreach($file as $ln => $line) {
+          if(stripos($line, ${"{$varname}_test"}) !== false) break;
+        }
+        $ln++;
+        preg_match('/\@expect[\s]+(.*)\n?/', $file[$ln], ${"{$varname}__matches_expect"});
+        echo $logs[] = "File: ".realpath(${"{$varname}_file"})."\n";
+        echo $logs[] = "Line: {$ln}\n";
+        echo $logs[] = "Test using: {$basedir}/{${"{$varname}_test"}}\n";
+        echo $logs[] = "Source: \n---------\n" . file_get_contents($basedir . '/' . ${"{$varname}_test"}) . "\n---------\n";
+        ob_start();
+        var_dump(${"{$varname}_result"});
+        echo $logs[] = 'Return: ' . trim(ob_get_clean()) . "\n";
+        if(isset(${"{$varname}__matches_expect"}[0])) {
+          ${"{$varname}_tmp_expec_name"} = md5(microtime());
+          ${"{$varname}_tmp_expec"} = "{${"{$varname}_tmp_dir"}}/test-{${"{$varname}_tmp_expec_name"}}.php";  
+          file_put_contents(${"{$varname}_tmp_expec"}, "<?php {${"{$varname}__matches_expect"}[1]};");
+          ob_start();
+          try {
+            $expect = require ${"{$varname}_tmp_expec"};
+          }
+          catch(Exception | ErrorException | Error | ArgumentCountError | ArithmeticError | AssertionError | DivisionByZeroError | CompileError | ParseError | TypeError $e) {
+            $expect = $e->getMessage();
+          }
+          ob_end_clean();
+          ob_start();
+          var_dump($expect);
+          $expect_ret = ob_get_clean();
+          echo $logs[] = 'Expect: ' . $expect_ret . "\n";
+          echo $logs[] = "Status: " . (${"{$varname}_result"} === $expect ? 'Success' : 'Failed');
+          ${"{$varname}_result"} = (${"{$varname}_result"} === $expect);
+        }
+        else {
+          echo $logs[] = "Status: " . (${"{$varname}_result"} === true ? 'Success' : 'Failed');
+        }
+        echo $logs[] = "\n\n";
+        unlink(${"{$varname}_tmp"});
+        if(${"{$varname}_result"} !== true) {
+          ${"{$varname}_errors"}++;
+        }
+      }
+    }
+    preg_match_all('/\@test:js return[\s]+(.*)\n?/', ${"{$varname}_contents"}, ${"{$varname}__matches"});
+    if(isset(${"{$varname}__matches"}[1])) {
+      foreach(${"{$varname}__matches"}[1] as ${"{$varname}__test_key"} => ${"{$varname}_test"}) {
+        ${"{$varname}_tmp_name"} = md5(microtime());
+        ${"{$varname}_tmp"} = "{${"{$varname}_tmp_dir"}}/test-{${"{$varname}_tmp_name"}}.js";          
+        file_put_contents(${"{$varname}_tmp"}, ${"{$varname}_test"});
+        ob_start();
+        try {
+          exec('node ' . ${"{$varname}_tmp"}, $output);
+          $return = array_shift($output);
+          ${"{$varname}_result"} = $return;
+          if($return === 'true' || $return === 'false') {
+            ${"{$varname}_result"} = (bool) $return;
+          }
+        }
+        catch(Exception | ErrorException | Error | ArgumentCountError | ArithmeticError | AssertionError | DivisionByZeroError | CompileError | ParseError | TypeError $e) {
+          ${"{$varname}_result"} = $e->getMessage();
+        }
+        ob_end_clean();
+        $ln = 0;
+        foreach($file as $ln => $line) {
+          if(stripos($line, ${"{$varname}_test"}) !== false) break;
+        }
+        $ln++;
+        preg_match('/\@expect[\s]+(.*)\n?/', $file[$ln], ${"{$varname}__matches_expect"});
+        echo $logs[] = "File: ".realpath(${"{$varname}_file"})."\n";
+        echo $logs[] = "Line: {$ln}\n";
+        echo $logs[] = "Test: {${"{$varname}_test"}}\n";
+        ob_start();
+        var_dump(${"{$varname}_result"});
+        echo $logs[] = 'Return: ' . trim(ob_get_clean()) . "\n";
+        if(isset(${"{$varname}__matches_expect"}[0])) {
+          ${"{$varname}_tmp_expec_name"} = md5(microtime());
+          ${"{$varname}_tmp_expec"} = "{${"{$varname}_tmp_dir"}}/test-{${"{$varname}_tmp_expec_name"}}.php";  
+          file_put_contents(${"{$varname}_tmp_expec"}, "<?php {${"{$varname}__matches_expect"}[1]};");
+          ob_start();
+          try {
+            $expect = require ${"{$varname}_tmp_expec"};
+          }
+          catch(Exception | ErrorException | Error | ArgumentCountError | ArithmeticError | AssertionError | DivisionByZeroError | CompileError | ParseError | TypeError $e) {
+            $expect = $e->getMessage();
+          }
+          ob_end_clean();
+          ob_start();
+          var_dump($expect);
+          $expect_ret = ob_get_clean();
+          echo $logs[] = 'Expect: ' . $expect_ret . "\n";
+          echo $logs[] = "Status: " . (${"{$varname}_result"} === $expect ? 'Success' : 'Failed');
+          ${"{$varname}_result"} = (${"{$varname}_result"} === $expect);
+        }
+        else {
+          echo $logs[] = "Status: " . (${"{$varname}_result"} === true ? 'Success' : 'Failed');
+        }
+        echo $logs[] = "\n\n";
+        unlink(${"{$varname}_tmp"});
+        if(${"{$varname}_result"} !== true) {
+          ${"{$varname}_errors"}++;
+        }
+      }
+    }
+    preg_match_all('/\@test_using:js[\s]+(.*)\n?/', ${"{$varname}_contents"}, ${"{$varname}__matches"});
+    if(isset(${"{$varname}__matches"}[1])) {
+      foreach(${"{$varname}__matches"}[1] as ${"{$varname}__test_key"} => ${"{$varname}_test"}) {
+        ${"{$varname}_tmp_name"} = md5(microtime());
+        ${"{$varname}_tmp"} = "{${"{$varname}_tmp_dir"}}/test-{${"{$varname}_tmp_name"}}.js";   
+        file_put_contents(${"{$varname}_tmp"}, file_get_contents($basedir . '/' . ${"{$varname}_test"}));
+        ob_start();
+        try {
+          exec('node ' . ${"{$varname}_tmp"}, $output);
+          $return = array_shift($output);
+          ${"{$varname}_result"} = $return;
+          if($return === 'true' || $return === 'false') {
+            ${"{$varname}_result"} = (bool) $return;
+          }
+        }
+        catch(Exception | ErrorException | Error | ArgumentCountError | ArithmeticError | AssertionError | DivisionByZeroError | CompileError | ParseError | TypeError $e) {
+          ${"{$varname}_result"} = $e->getMessage();
+        }
+        ob_end_clean();
+        $ln = 0;
+        foreach($file as $ln => $line) {
+          if(stripos($line, ${"{$varname}_test"}) !== false) break;
+        }
+        $ln++;
+        preg_match('/\@expect[\s]+(.*)\n?/', $file[$ln], ${"{$varname}__matches_expect"});
+        echo $logs[] = "File: ".realpath(${"{$varname}_file"})."\n";
+        echo $logs[] = "Line: {$ln}\n";
+        echo $logs[] = "Test using: {$basedir}/{${"{$varname}_test"}}\n";
+        echo $logs[] = "Source: \n---------\n" . file_get_contents($basedir . '/' . ${"{$varname}_test"}) . "\n---------\n";
+        ob_start();
+        var_dump(${"{$varname}_result"});
+        echo $logs[] = 'Return: ' . trim(ob_get_clean()) . "\n";
+        if(isset(${"{$varname}__matches_expect"}[0])) {
+          ${"{$varname}_tmp_expec_name"} = md5(microtime());
+          ${"{$varname}_tmp_expec"} = "{${"{$varname}_tmp_dir"}}/test-{${"{$varname}_tmp_expec_name"}}.php";  
+          file_put_contents(${"{$varname}_tmp_expec"}, "<?php {${"{$varname}__matches_expect"}[1]};");
+          ob_start();
+          try {
+            $expect = require ${"{$varname}_tmp_expec"};
+          }
+          catch(Exception | ErrorException | Error | ArgumentCountError | ArithmeticError | AssertionError | DivisionByZeroError | CompileError | ParseError | TypeError $e) {
+            $expect = $e->getMessage();
+          }
+          ob_end_clean();
+          ob_start();
+          var_dump($expect);
+          $expect_ret = ob_get_clean();
+          echo $logs[] = 'Expect: ' . $expect_ret . "\n";
+          echo $logs[] = "Status: " . (${"{$varname}_result"} === $expect ? 'Success' : 'Failed');
+          ${"{$varname}_result"} = (${"{$varname}_result"} === $expect);
+        }
+        else {
+          echo $logs[] = "Status: " . (${"{$varname}_result"} === true ? 'Success' : 'Failed');
+        }
+        echo $logs[] = "\n\n";
+        unlink(${"{$varname}_tmp"});
+        if(${"{$varname}_result"} !== true) {
+          ${"{$varname}_errors"}++;
+        }
+      }
+    }
+  }
+}
+file_put_contents($currentWorkingDir . '/phptest.logs', trim(implode('', $logs)));
+if(${"{$varname}_errors"}) {
+  exit("\033[31m There is something wrong! Try review your code.\033[0m\n");
+}
+exit("\033[92m Congratulations! All tests are passed.\033[0m\n");

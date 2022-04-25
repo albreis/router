@@ -1,0 +1,28 @@
+{
+  "name": "albreis/phptest",
+  "version": "1.2.1",
+  "type": "library",
+  "require": {
+    "php": ">=7.2"
+  },
+  "authors": [
+    {
+        "name": "ER Soluções Web LTDA",
+        "email": "contato@ersoucoesweb.com.br",
+        "homepage": "https://www.ersoucoesweb.com.br",
+        "role": "Developer"
+    },
+    {
+        "name": "Everaldo programador",
+        "email": "contato@everaldoreis.com.br",
+        "homepage": "https://everaldoreis.com.br",
+        "role": "Developer"
+    }
+  ],
+  "support": {
+    "email": "contato@ersolucoesweb.com.br",
+    "whatsapp": "https://wa.me/554898523084"
+  },
+  "license": "MIT",
+  "bin": ["phptest"]
+}

@@ -1,0 +1,74 @@
+{
+    "packages": [
+        {
+            "name": "albreis/phptest",
+            "version": "1.2.1",
+            "version_normalized": "1.2.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/albreis/phptest.git",
+                "reference": "8d336e22397c7a2f61126a0d2ab17a394aff4be3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/albreis/phptest/zipball/8d336e22397c7a2f61126a0d2ab17a394aff4be3",
+                "reference": "8d336e22397c7a2f61126a0d2ab17a394aff4be3",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "time": "2022-03-02T04:39:21+00:00",
+            "bin": [
+                "phptest"
+            ],
+            "type": "library",
+            "installation-source": "dist",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "ER Soluções Web LTDA",
+                    "email": "contato@ersoucoesweb.com.br",
+                    "homepage": "https://www.ersoucoesweb.com.br",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Everaldo programador",
+                    "email": "contato@everaldoreis.com.br",
+                    "homepage": "https://everaldoreis.com.br",
+                    "role": "Developer"
+                }
+            ],
+            "support": {
+                "email": "contato@ersolucoesweb.com.br",
+                "issues": "https://github.com/albreis/phptest/issues",
+                "source": "https://github.com/albreis/phptest/tree/1.2.1",
+                "whatsapp": "https://wa.me/554898523084"
+            },
+            "funding": [
+                {
+                    "url": "https://facebook.com/everaldo.programador.fullstack",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://www.ersolucoesweb.com.br",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://www.instagram.com/programador.fullstack/",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://youtube.com/UmaTagPorDia",
+                    "type": "custom"
+                }
+            ],
+            "install-path": "../albreis/phptest"
+        }
+    ],
+    "dev": true,
+    "dev-package-names": []
+}
