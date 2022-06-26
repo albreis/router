@@ -86,6 +86,7 @@ $router->get('^([^/]+)/([^/]+)$', function($category, $post){
 Ao acessar a rota http://seusite.com.br/minha-categoria/postagem-109 as variáveis `$category` e `$post` teriam os valores **minha-categoria** e **postagem-109** respectivamente.
 
 # Como criar um middleware
+
 Para usar o Router como um middleware para setar a rota como **bypass**.
 
 No exemplo abaixo temos um middleware que é executado em todas as requisições do método POST para a rota login.
@@ -120,12 +121,44 @@ $router->get('^login$', function(){
 });
 ```
 
+# Before e After
+
+Existem 2 métodos que também podem ser utilizados com middlwares.
+
+A diferença entre usar esses métodos ou utilizar uma rota com bypass é que com before e after você não precisa escrever o pattern da rota.
+
+Before e After podem ser usados também em rotas com bypass.
+
+```php
+$router->before(function(){
+    /**
+     * Callback executado antes da action da rota
+     */
+})->after(function(){
+    /**
+     * Callback executado após a action da rota
+     */
+
+})->get('^login$', function(){
+    /**
+     * Executa as instruções da rota e pára a excusão do script
+     */
+
+    /**
+     * Este print_r() irá retornar Array ( )
+     */
+    print_r($_GET);
+
+    $_GET['teste'] = 123;
+});
+```
+
 # Usando via CLI
 
 Você pode usar o Router via terminal para chamar as rotas usando o padrão abaixo:
 
 ```
-php index.php METODO PATH ARGUMENTOS
+$ php index.php METODO PATH ARGUMENTOS
 ```
 
 Exemplo:
