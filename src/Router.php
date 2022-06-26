@@ -15,6 +15,7 @@ class Router
      */
     private $routes = [];
 
+    public $before_callback = null;
     public $allowed_methods = [
         'GET',
         'POST',
@@ -171,6 +172,11 @@ class Router
         return $this->exec($name, $path, $callback, $bypass);
     }
 
+    public function before($callback = null) {
+        $this->before_callback = $callback;
+        return $this;
+    }
+
     /**
      * @param $method
      * @param $uri
@@ -191,7 +197,10 @@ class Router
         
         if (($method == $this->method() || $method == '*' || $method == 'all') && preg_match($route, $this->uri(), $parameters)) {
             array_shift($parameters);
-            return $this->call($callback, $parameters);
+            if($this->before_callback) {
+                $this->call($this->before_callback, $parameters);
+            }
+            $this->before_callback = null;
             if(!$bypass) {
                 exit;
             }
