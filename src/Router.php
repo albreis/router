@@ -16,6 +16,9 @@ class Router
     private $routes = [];
 
     public $before_callback = null;
+
+    public $after_callback = null;
+
     public $allowed_methods = [
         'GET',
         'POST',
@@ -177,6 +180,11 @@ class Router
         return $this;
     }
 
+    public function after($callback = null) {
+        $this->after_callback = $callback;
+        return $this;
+    }
+
     /**
      * @param $method
      * @param $uri
@@ -200,7 +208,11 @@ class Router
             if($this->before_callback) {
                 $this->call($this->before_callback, $parameters);
             }
+            if($this->after_callback) {
+                $this->call($this->after_callback, $parameters);
+            }
             $this->before_callback = null;
+            $this->after_callback = null;
             if(!$bypass) {
                 exit;
             }
