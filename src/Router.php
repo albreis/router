@@ -1,13 +1,9 @@
 <?php namespace Albreis;
 
 use ReflectionMethod;
-use Exception;  
+use ReflectionException;
+use ReflectionParameter;
 
-/**
- * Class Router
- * @package Albreis
- * 
- */
 class Router
 {
     /**
@@ -16,6 +12,7 @@ class Router
     private $routes = [];
 
     public $output;
+    public $prefix;
 
     public $before_callback = null;
 
@@ -44,31 +41,23 @@ class Router
 
     /**
      * @return string
-     * 
      * Teste para retorna o método da requisição atual
-     * 
      * @test return (new Albreis\Router)->method()
      * @expect return "cli"
-     * 
      * Teste simulando uma requisição GET
-     * 
      * @test return (new Albreis\Router('GET'))->method()
      * @expect return "GET"
-     * 
      * Teste simulando um verbo não existente
-     * 
      * @test return new Albreis\Router('FOO')
      * @expect return "Method not allowed"
-     * 
      * Teste de classe declarada de forma incorreta
-     * 
      * @test return new Router;
      * @expect return 'Class "Router" not found'
      */
     public function method()
     {
 
-        if($this->method) {
+        if ($this->method) {
             return $this->method;
         }
 
@@ -78,16 +67,19 @@ class Router
     /**
      * @test $router = new Albreis\Router; $router->setMethod('POST'); return $router->method;
      * @expect return 'POST'
-     * 
+     *
      * @test $router = new Albreis\Router; $router->setMethod('BAR'); return $router->method;
      * @expect return 'Method not allowed'
      */
 
-    public function setMethod($method) {
+    public function setMethod($method)
+    {
         
-        if(!$method) return;
+        if (!$method) {
+            return;
+        }
 
-        if(!in_array($method, $this->allowed_methods)) {
+        if (!in_array($method, $this->allowed_methods)) {
             throw new Exception('Method not allowed');
         }
 
@@ -96,26 +88,24 @@ class Router
 
     /**
      * @return string
-     * 
+     *
      * @test return (new Albreis\Router)->uri()
      * @expect return 'src'
-     * 
+     *
      * @test return (new Albreis\Router(null, '/homepage'))->uri()
      * @expect return '/homepage'
      */
     public function uri()
     {
 
-        if($this->uri) 
-        {
+        if ($this->uri) {
             return $this->uri;
         }
 
-        if($this->method() == 'cli') 
-        {
+        if ($this->method() == 'cli') {
             global $argv;
 
-            if(!isset($argv[1])) {
+            if (!isset($argv[1])) {
                 throw new Exception("URI is required", 1);
             }
 
@@ -123,26 +113,24 @@ class Router
 
             unset($arguments[0]);
 
-            if(isset($argv[2])) {
+            if (isset($argv[2])) {
                 $_SERVER['REQUEST_METHOD'] = array_shift($arguments);
                 $_SERVER['REQUEST_URI'] = array_shift($arguments);
-            }
-            else {
+            } else {
                 $_SERVER['REQUEST_URI'] = array_shift($arguments);
             }
 
             $url = parse_url($_SERVER['REQUEST_URI']);
 
-            if(count($argv) > 3) {
+            if (count($argv) > 3) {
                 parse_str(implode('&', $arguments), $_POST);
             }
 
-            if(isset($url['query'])) {
+            if (isset($url['query'])) {
                 parse_str($url['query'], $_GET);
             }
 
             $_REQUEST = $_GET + $_POST;
-
         }
 
         $self = isset($_SERVER['PHP_SELF']) ? str_replace('index.php/', '', $_SERVER['PHP_SELF']) : '';
@@ -161,6 +149,12 @@ class Router
         return $uri;
     }
 
+    public function prefix($prefix)
+    {
+        $this->prefix = $prefix;
+        return $this;
+    }
+
     /**
      * is triggered when invoking inaccessible methods in an object context.
      *
@@ -168,21 +162,28 @@ class Router
      * @param $arguments array
      * @return mixed
      * @link http://php.net/manual/en/language.oop5.overloading.php#language.oop5.overloading.methods
-     * 
+     *
      */
-    function __call($name, $arguments)
+    public function __call($name, $arguments)
     {
         list($path, $callback, $bypass) = array_pad($arguments, 3, '');
+
+        if (is_callable($path)) {
+            $callback = $path;
+            $path = '.*';
+        }
 
         return $this->exec($name, $path, $callback, $bypass);
     }
 
-    public function before($callback = null) {
+    public function before($callback = null)
+    {
         $this->before_callback = $callback;
         return $this;
     }
 
-    public function after($callback = null) {
+    public function after($callback = null)
+    {
         $this->after_callback = $callback;
         return $this;
     }
@@ -194,29 +195,28 @@ class Router
      */
     private function exec($method, $path, $callback, $bypass = false)
     {
-        if(is_array($method)) {
-            foreach($method as $m) {
+        if (is_array($method)) {
+            foreach ($method as $m) {
                 $this->exec($m, $path, $callback, $bypass);
             }
             return;
         }
         $method = strtolower($method);
-        $uri = $path;
+        $uri = $this->prefix.$path;
         $pattern = str_replace('/', '\/', $uri);
         $route = '/' . $pattern . '/';
-        
-        if (($method == $this->method() || $method == '*' || $method == 'all') && preg_match($route, $this->uri(), $parameters)) {
+        if (($method == $this->method() || $method == '*' || $method == 'all' || $method == 'any') && preg_match($route, $this->uri(), $parameters)) {
             array_shift($parameters);
-            if($this->before_callback) {
+            if ($this->before_callback) {
                 $this->call($this->before_callback, $parameters);
             }
             $this->output = $this->call($callback, $parameters);
-            if($this->after_callback) {
+            if ($this->after_callback) {
                 $this->call($this->after_callback, $parameters);
             }
             $this->before_callback = null;
             $this->after_callback = null;
-            if(!$bypass) {
+            if (!$bypass) {
                 exit;
             }
             return $this->output;
@@ -230,16 +230,33 @@ class Router
      */
     private function call($callback, $parameters)
     {
-        if(is_string($callback) && count($call = explode('::', $callback)) == 2) {
+        if (is_string($callback) && count($call = explode('::', $callback)) == 2) {
             $method = new ReflectionMethod($call[0], $call[1]);
             if (!$method->isStatic()) {
                 $callback = [new $call[0], $call[1]];
             }
         }
         if (is_callable($callback)) {
-            return call_user_func_array($callback, $parameters);
+            try {
+                new ReflectionParameter($callback, 'request');
+                $parameters['request'] = new Request;
+            } catch (ReflectionException $e) {
+            }
+            try {
+                new ReflectionParameter($callback, 'response');
+                $parameters['response'] = new Response;
+            } catch (ReflectionException $e) {
+            }
+            try {
+                new ReflectionParameter($callback, 'router');
+                $parameters['router'] = $this;
+            } catch (ReflectionException $e) {
+            }
+            $return = call_user_func_array($callback, $parameters);
+            if (!is_string($return) && !empty($return)) {
+                $return = json_encode($return);
+            }
+            return $return;
         }
-        return null;
     }
-
 }
