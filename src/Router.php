@@ -1,7 +1,9 @@
 <?php namespace Albreis;
 
 use ReflectionMethod;
+use Closure;
 use ReflectionException;
+use ReflectionFunction;
 use ReflectionParameter;
 
 class Router
@@ -193,7 +195,7 @@ class Router
      * @param $uri
      * @return mixed|null
      */
-    private function exec($method, $path, $callback, $bypass = false)
+    private function exec($method, $path, $callback, $bypass = false, $ret = false)
     {
         if (is_array($method)) {
             foreach ($method as $m) {
@@ -216,10 +218,12 @@ class Router
             }
             $this->before_callback = null;
             $this->after_callback = null;
-            if (!$bypass) {
+            if (!$bypass && !$ret) {
                 exit;
             }
-            return $this->output;
+            if ($ret) {
+                return $this->output;
+            }
         }
     }
 
@@ -237,15 +241,19 @@ class Router
             }
         }
         if (is_callable($callback)) {
-            try {
-                new ReflectionParameter($callback, 'request');
-                $parameters['request'] = new Request;
-            } catch (ReflectionException $e) {
+            if ($callback instanceof Closure == true || is_string($callback)) {
+                $method = new ReflectionFunction($callback);
             }
-            try {
-                new ReflectionParameter($callback, 'response');
-                $parameters['response'] = new Response;
-            } catch (ReflectionException $e) {
+            $params = $method->getParameters();
+            foreach ($params as $parameter) {
+                try {
+                    $param = new ReflectionParameter($callback, $parameter->getName());
+                    if ($param->getClass()) {
+                        $class = $param->getClass()->getName();
+                        $parameters[$parameter->getName()] = new $class;
+                    }
+                } catch (ReflectionException $e) {
+                }
             }
             try {
                 new ReflectionParameter($callback, 'router');
@@ -253,9 +261,6 @@ class Router
             } catch (ReflectionException $e) {
             }
             $return = call_user_func_array($callback, $parameters);
-            if (!is_string($return) && !empty($return)) {
-                $return = json_encode($return);
-            }
             return $return;
         }
     }
