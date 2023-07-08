@@ -206,3 +206,31 @@ $router->get('^([^/]+)/([^/]+)$', function($a, $b) use ($home) {
 $router->get('^([^/]+)/([^/]+)$', fn($a, $b) => $home->index($a, $b));
 
 ```
+
+## Prefix
+
+Agora é possível agrupar rotas usando prefixos:
+
+Exemplo:
+```php
+
+$router->prefix('/api')->all(function(Router $router) {
+
+    $router->get('^([^/]+)/([^/]+)$', [$home, 'index']);
+
+    // ou 
+
+    $router->get('^([^/]+)/([^/]+)$', 'Home::index');
+
+    // ou
+
+    $router->get('^([^/]+)/([^/]+)$', function($a, $b) use ($home) {
+        $home->index($a, $b);
+    });
+
+    // ou
+
+    $router->get('^([^/]+)/([^/]+)$', fn($a, $b) => $home->index($a, $b));
+
+});
+```
