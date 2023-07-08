@@ -247,7 +247,7 @@ $router->get('/', function(Model $model){
 });
 ```
 
-Agora também épossivel acessar uma instância do Router a partir do método:
+Agora também é possivel acessar uma instância do Router a partir do método:
 
 ```php
 $router = new Albreis\Router;
