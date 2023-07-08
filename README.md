@@ -234,3 +234,25 @@ $router->prefix('/api')->all(function(Router $router) {
 
 });
 ```
+
+Agora os métodos podem usar injeção de parâmetro, exemplo:
+
+```php
+$router = new Albreis\Router;
+
+class Model { }
+
+$router->get('/', function(Model $model){
+    // $model é uma instância da classe Model
+});
+```
+
+Agora também épossivel acessar uma instância do Router a partir do método:
+
+```php
+$router = new Albreis\Router;
+
+$router->get('/', function($router){
+    // $router é uma instância do router atual e está sempre disponível
+});
+```
