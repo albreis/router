@@ -9,10 +9,6 @@ use ReflectionParameter;
 
 class Router
 {
-    /**
-     * @var array
-     */
-    private $routes = [];
 
     public $output;
     public $prefix;
@@ -132,8 +128,6 @@ class Router
             if (isset($url['query'])) {
                 parse_str($url['query'], $_GET);
             }
-
-            $_REQUEST = $_GET + $_POST;
         }
 
         $self = isset($_SERVER['PHP_SELF']) ? str_replace('index.php/', '', $_SERVER['PHP_SELF']) : '';
