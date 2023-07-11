@@ -60,7 +60,7 @@ class Router
     {
 
         if ($this->method) {
-            return $this->method;
+            return strtolower($this->method);
         }
 
         return isset($_SERVER['REQUEST_METHOD']) ? strtolower($_SERVER['REQUEST_METHOD']) : 'cli';
