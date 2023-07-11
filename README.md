@@ -23,7 +23,7 @@ $router = new Router;
 O Router aceita qualquer método de requisição e possui 3 argumentos:
 
 ```php
-$router->[metodo]([path], [callback], [bypass]);
+$router->[metodo]([path], [callback], [bypass], [return]);
 ```
 
 **metodo** GET, POST, DELETE, CLI, etc
@@ -38,6 +38,8 @@ $router->[metodo]([path], [callback], [bypass]);
 - Arrow functions `fn() => return true`
 
 **bypass** indica se o script vai continuar sendo executado após o match com a rota.
+
+**return** indica se será retornado o valor caso o callback retorne algum valor
 
 # Exemplos
 
