@@ -168,14 +168,14 @@ class Router
      */
     public function __call($name, $arguments)
     {
-        list($path, $callback, $bypass) = array_pad($arguments, 3, '');
+        list($path, $callback, $bypass, $ret) = array_pad($arguments, 4, '');
 
         if (is_callable($path)) {
             $callback = $path;
             $path = '.*';
         }
 
-        return $this->exec($name, $path, $callback, $bypass);
+        return $this->exec($name, $path, $callback, $bypass, $ret);
     }
 
     public function before($callback = null)
@@ -199,7 +199,7 @@ class Router
     {
         if (is_array($method)) {
             foreach ($method as $m) {
-                $this->exec($m, $path, $callback, $bypass);
+                $this->exec($m, $path, $callback, $bypass, $ret);
             }
             return;
         }
@@ -218,10 +218,11 @@ class Router
             }
             $this->before_callback = null;
             $this->after_callback = null;
-            if (!$bypass && !$ret) {
+
+            if ($bypass == false && $ret == false) {
                 exit;
             }
-            if ($ret) {
+            if ($ret == true) {
                 return $this->output;
             }
         }
