@@ -2,6 +2,7 @@
 
 use ReflectionMethod;
 use Closure;
+use Exception;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionParameter;
