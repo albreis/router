@@ -2,10 +2,10 @@
 
 use ReflectionMethod;
 use Closure;
+use Error;
 use Exception;
 use ReflectionException;
 use ReflectionFunction;
-use ReflectionParameter;
 
 class Router
 {
@@ -204,13 +204,17 @@ class Router
         $route = '/' . $pattern . '/';
         if (($method == $this->method() || $method == '*' || $method == 'all' || $method == 'any') && preg_match($route, $this->uri(), $parameters)) {
             array_shift($parameters);
+
             if ($this->before_callback) {
                 $this->call($this->before_callback, $parameters);
             }
+
             $this->output = $this->call($callback, $parameters);
+
             if ($this->after_callback) {
                 $this->call($this->after_callback, $parameters);
             }
+
             $this->before_callback = null;
             $this->after_callback = null;
 
@@ -230,34 +234,48 @@ class Router
      */
     private function call($callback, $parameters)
     {
-        if (is_string($callback) && count($call = explode('::', $callback)) == 2) {
-            $method = new ReflectionMethod($call[0], $call[1]);
-            if (!$method->isStatic()) {
-                $callback = [new $call[0], $call[1]];
-            }
-        }
-        if (is_callable($callback)) {
-            if ($callback instanceof Closure == true || is_string($callback)) {
-                $method = new ReflectionFunction($callback);
-            }
-            $params = $method->getParameters();
-            foreach ($params as $parameter) {
-                try {
-                    $param = new ReflectionParameter($callback, $parameter->getName());
-                    if ($param->getClass()) {
-                        $class = $param->getClass()->getName();
-                        $parameters[$parameter->getName()] = new $class;
-                    }
-                } catch (ReflectionException $e) {
+        $return = '';
+        
+        if (is_callable($callback) == false) {
+            if (is_string($callback) && count($call = explode('::', $callback)) == 2) {
+                $method = new ReflectionMethod($call[0], $call[1]);
+                if (!$method->isStatic()) {
+                    $callback = [new $call[0], $call[1]];
                 }
             }
+        }
+        if ($callback instanceof Closure == true || is_string($callback)) {
+            $method = new ReflectionFunction($callback);
+        }
+        $params = [];
+        $_parameters = $this->_getCallableParamsWithPosition($method);
+        foreach ($_parameters as $name => $param) {
+            $params[$name] = $parameters[$param[0]] ?? $param[1];
+        }
+        $return = call_user_func_array($callback, $params);
+        return $return;
+    }
+
+    private function _getCallableParamsWithPosition($method)
+    {
+        $parameters = [];
+        $params = $method->getParameters();
+        foreach ($params as $index => $parameter) {
+            $parameters[$parameter->getName()] = [$index, null];
             try {
-                new ReflectionParameter($callback, 'router');
-                $parameters['router'] = $this;
+                if ($parameter->getType()) {
+                    $class = $parameter->getType()->getName();
+                    $parameters[$parameter->getName()] = [$index, new $class];
+                } else {
+                    try {
+                        $_params[$parameter->getName()] = [$index, $parameter->getDefaultValue()];
+                    } catch (ReflectionException|Error $e) {
+                        $_params[$parameter->getName()] = [$index, null];
+                    }
+                }
             } catch (ReflectionException $e) {
             }
-            $return = call_user_func_array($callback, $parameters);
-            return $return;
         }
+        return $parameters;
     }
 }
