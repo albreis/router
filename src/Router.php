@@ -9,6 +9,12 @@ use ReflectionFunction;
 
 class Router
 {
+    
+    /**
+     * @var array
+     */
+    private $routes = [];
+    private $params = [];
 
     public $output;
     public $prefix;
@@ -130,18 +136,9 @@ class Router
             }
         }
 
-        $self = isset($_SERVER['PHP_SELF']) ? str_replace('index.php/', '', $_SERVER['PHP_SELF']) : '';
         $uri = isset($_SERVER['REQUEST_URI']) ? explode('?', $_SERVER['REQUEST_URI'])[0] : '';
         $uri = str_replace($_SERVER['SCRIPT_NAME'], '/', $uri);
         $uri = urldecode($uri);
-
-        if ($self !== $uri) {
-            $peaces = explode('/', $self);
-            array_pop($peaces);
-            $start = implode('/', $peaces);
-            $search = '/' . preg_quote($start, '/') . '/';
-            $uri = preg_replace($search, '', $uri, 1);
-        }
 
         return $uri;
     }
