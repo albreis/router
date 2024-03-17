@@ -1,6 +1,5 @@
 {
   "name": "albreis/router",
-  "version": "3.1.0",
   "type": "library",
   "require": {
     "php": ">=8.1",
