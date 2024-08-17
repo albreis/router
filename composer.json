@@ -1,6 +1,7 @@
 {
   "name": "albreis/router",
   "type": "library",
+  "license": "MIT",
   "require": {
     "php": ">=8.1",
     "albreis/phptest": "^1.2"
