@@ -258,3 +258,161 @@ $router->get('/', function($router){
     // $router é uma instância do router atual e está sempre disponível
 });
 ```
+
+## Usando Registry
+
+Router Registry é uma forma de carregar automaticamente rotas usando DocBlock @Route.
+
+Exemplo:
+
+```php
+class HomeController {
+
+    /**
+     * @Route::get('^/?$')
+     */
+    public function index() {
+        var_dump(123);
+    }
+
+}
+```
+
+#### Como carregar automaticamente arquivos:
+
+```php
+<?php
+
+use Albreis\Router;
+use Albreis\RouterRegistry;
+
+require '../vendor/autoload.php';
+
+$router = new Router;
+
+$registry = new RouterRegistry($router);
+
+$registry->loadFrom(__DIR__ . '/../src/Http/Controllers', 'App/');
+
+$registry->run();
+```
+
+Isso vai fazer com o todas as classes do namespace App/ do diretorio sejam mapeadas.
+
+
+#### Como carregar uma classe única:
+
+```php
+<?php
+
+use Albreis\Router;
+use Albreis\RouterRegistry;
+use App\Http\Controllers\HomeController;
+
+require '../vendor/autoload.php';
+
+$router = new Router;
+
+$registry = new RouterRegistry($router);
+
+$registry->addClass(HomeController::class);
+
+$registry->run();
+```
+
+Isso vai fazer com os metodos da classe sejam mapeados.
+
+
+#### Usando funções:
+
+Você pode utilizar funções para trabalhar com rotas:
+
+```php
+<?php
+
+use Albreis\Router;
+use Albreis\RouterRegistry;
+use App\Http\Controllers\HomeController;
+
+require '../vendor/autoload.php';
+
+$router = new Router;
+
+$registry = new RouterRegistry($router);
+
+/**
+ * @Route::get('/hello')
+ */
+function hello()
+{
+    echo('hello');
+}
+
+
+$registry->loadUserFunctions();
+
+$registry->run();
+```
+
+Ao acessar /hello o Router vai executar essa função. Lembre-se que a função precisa existir. 
+
+Caso a função esteja em um arquivo externo que ainda não tenha sido feito include/require vocêpode usar o método **loadUserFunctionsFrom()**, ele vai fazer include do arquivo antes de buscar rotas.
+
+
+
+```php
+<?php
+
+use Albreis\Router;
+use Albreis\RouterRegistry;
+use App\Http\Controllers\HomeController;
+
+require '../vendor/autoload.php';
+
+$router = new Router;
+
+$registry = new RouterRegistry($router);
+
+$registry->loadUserFunctionsFrom('../functions.php');
+
+$registry->run();
+```
+
+#### Adicionar uma função unica
+
+
+
+```php
+<?php
+
+use Albreis\Router;
+use Albreis\RouterRegistry;
+use App\Http\Controllers\HomeController;
+
+require '../vendor/autoload.php';
+
+$router = new Router;
+
+$registry = new RouterRegistry($router);
+
+/**
+ * @Route::get('/hello')
+ */
+function hello()
+{
+    echo('hello');
+}
+
+$registry->addFunction('hello');
+
+$registry->run();
+```
+
+
+### Salvar rotas em arquivo para produção
+
+Em produção o ideal  é que a aplicação não fique escaneando os arquivos por rotas a cada requisição.
+
+Para isso você pode gerar um arquivo de rotas usando o método **$registry->save([caminho do arquivo])**.
+
+O caminho padrão do arquivo é routes.php no direotrio atual.
