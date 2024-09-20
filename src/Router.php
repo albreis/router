@@ -18,6 +18,7 @@ class Router
 
     public $output;
     public $prefix;
+    public $baseUrl;
 
     public $before_callback = null;
 
@@ -37,10 +38,11 @@ class Router
 
     public $uri;
 
-    public function __construct($method = null, $uri = null)
+    public function __construct($method = null, $uri = null, $baseUrl = '/')
     {
         $this->setMethod($method);
-        $this->uri = $uri;
+        $this->baseUrl = $baseUrl;
+        $this->uri =  $uri;
         $this->uri();
     }
 
@@ -140,7 +142,9 @@ class Router
         $uri = str_replace($_SERVER['SCRIPT_NAME'], '/', $uri);
         $uri = urldecode($uri);
 
-        return $uri;
+        $this->uri =  preg_replace('/' . preg_quote($this->baseUrl, '/') . '/', '', $uri, 1);
+
+        return $this->uri;
     }
 
     public function prefix($prefix)
