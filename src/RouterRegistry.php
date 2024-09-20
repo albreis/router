@@ -11,6 +11,10 @@ class RouterRegistry
 
     protected $files = [];
 
+    public $routes = [];
+    
+    private $_routes = [];
+
     public function __construct(
         protected Router $router
     ) {
@@ -89,36 +93,56 @@ class RouterRegistry
         return $files;
     }
 
-    function autoload($namespace = null)
+    function loadUserFunctions()
     {
-        $namespace = str_replace('/','\\', $namespace);
         // Extract routes from functions
         $functionRoutes = $this->extractRoutesFromFunctions();
         foreach ($functionRoutes as $route) {
-            $this->router->{$route['method']}($route['pattern'], $route['callback']);
+            $this->_routes[] = $route;
+            $this->routes[] = "\$router->{$route['method']}('{$route['pattern']}', '{$route['callback']}');";
         }
-
+    }
+        
+    function autoload($namespace = null)
+    {
+        $namespace = str_replace('/', '\\', $namespace);
         // Extract routes from classes
         $declaredClasses = get_declared_classes();
         foreach ($declaredClasses as $class) {
             if (strpos($class, $namespace) === 0) {
                 $classRoutes = $this->extractRoutesFromClass($class);
                 foreach ($classRoutes as $route) {
-                    $this->router->{$route['method']}($route['pattern'], $route['callback']);
+                    $this->_routes[] = $route;
+                    $this->routes[] = "\$router->{$route['method']}('{$route['pattern']}', '{$route['callback']}');";
                 }
             }
         }
         return $this;
     }
 
-    function add($class)
+    function addClass($class)
     {
         // Extract routes from class
         $classRoutes = $this->extractRoutesFromClass($class);
         foreach ($classRoutes as $route) {
-            $this->router->{$route['method']}($route['pattern'], $route['callback']);
+            $this->_routes[] = $route;
+            $this->routes[] = "\$router->{$route['method']}('{$route['pattern']}', '{$route['callback']}');";
         }
         return $this;
+    }
+  
+    function addFunction($function)
+    {
+        $reflectionFunction = new ReflectionFunction($function);
+        $docComment = $reflectionFunction->getDocComment();
+        if ($docComment) {
+            $routeInfo = $this->parseRouteAnnotation($docComment);
+            if ($routeInfo) {
+                $route = ['method' => $routeInfo['method'], 'pattern' => $routeInfo['pattern'], 'callback' => $function];
+                $this->_routes[] = $route;
+                $this->routes[] = "\$router->{$route['method']}('{$route['pattern']}', '{$route['callback']}');";
+            }
+        }
     }
 
     function loadFrom($entry, $namespace = null)
@@ -149,5 +173,16 @@ class RouterRegistry
         require_once $file;
         $this->files[$file] = true;
         return $this;
+    }
+
+    public function run() {
+        foreach($this->_routes as $route) {
+            $this->router->{$route['method']}($route['pattern'], $route['callback']);
+        }
+    }
+
+    public function save($filePath = 'routes.php') {
+        $routerClassName = get_class($this->router);
+        file_put_contents($filePath, "<?php require 'vendor/autoload.php';\n\nuse {$routerClassName};\n\n\$router = new Router;\n\n" . implode("\n", $this->routes));
     }
 }
