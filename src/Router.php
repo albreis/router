@@ -38,7 +38,7 @@ class Router
 
     public $uri;
 
-    public function __construct($method = null, $uri = null, $baseUrl = '/')
+    public function __construct($method = null, $uri = null, $baseUrl = null)
     {
         $this->setMethod($method);
         $this->baseUrl = $baseUrl;
@@ -140,9 +140,11 @@ class Router
 
         $uri = isset($_SERVER['REQUEST_URI']) ? explode('?', $_SERVER['REQUEST_URI'])[0] : '';
         $uri = str_replace($_SERVER['SCRIPT_NAME'], '/', $uri);
-        $uri = urldecode($uri);
+        $this->uri = urldecode($uri);
 
-        $this->uri =  preg_replace('/' . preg_quote($this->baseUrl, '/') . '/', '', $uri, 1);
+        if($this->baseUrl) {
+            $this->uri =  preg_replace('/' . preg_quote($this->baseUrl, '/') . '/', '', $this->uri, 1);
+        }
 
         return $this->uri;
     }
