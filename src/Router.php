@@ -246,9 +246,12 @@ class Router
                     $callback = [new $call[0], $call[1]];
                 }
             }
-        }
-        if ($callback instanceof Closure == true || is_string($callback)) {
-            $method = new ReflectionFunction($callback);
+        } else {
+            if(is_array($callback)) {
+                $method = new ReflectionMethod($callback[0], $callback[1]);
+            } else {
+                $method = new ReflectionFunction($callback);
+            }
         }
         $params = [];
         $_parameters = $this->_getCallableParamsWithPosition($method);
