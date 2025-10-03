@@ -240,6 +240,12 @@ class Router
         $return = '';
         
         if (is_callable($callback) == false) {
+            if(is_array($callback) && is_string($callback[0]) && is_string($callback[1])) {
+                $method = new ReflectionMethod($callback[0], $callback[1]);
+                if(!$method->isStatic()) {
+                    $callback = [new $callback[0], $callback[1]];
+                }
+            }
             if (is_string($callback) && count($call = explode('::', $callback)) == 2) {
                 $method = new ReflectionMethod($call[0], $call[1]);
                 if (!$method->isStatic()) {
